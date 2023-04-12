@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   new Button("Start / Stop", () => Timer.toggle());
-  new Button("Clear", () => {Data.rows = []; Timer.stop();});
+  new Button("Clear", () => { Data.rows = []; Timer.stop(); });
 
   Timer.create();
   Table.create();
@@ -61,7 +61,7 @@ const Table = {
     data.forEach(row => this.addRow(row));
 
     this.htmlEl.style.display = "none";
-    if (data.length > 0) this.htmlEl.style.display = "block";
+    if (data.length > 0) this.htmlEl.style.display = "table";
   },
 
   addRow(row) {
@@ -95,15 +95,14 @@ class Button {
 const Timer = {
   create() {
     const root = document.querySelector("#root");
-
-    const allTimeCountDiv = document.createElement('div');
-    root.appendChild(allTimeCountDiv);
-    this.allTimeCountDiv = allTimeCountDiv;
-
     const currentTimerDiv = document.createElement('div');
     currentTimerDiv.className = "current-timer"
     root.appendChild(currentTimerDiv);
     this.currentTimerDiv = currentTimerDiv;
+
+    const allTimeCountDiv = document.createElement('div');
+    root.appendChild(allTimeCountDiv);
+    this.allTimeCountDiv = allTimeCountDiv;
 
     const noteSpan = document.createElement('span');
     noteSpan.className = "note";
@@ -120,7 +119,7 @@ const Timer = {
 
   render() {
     this.currentTimerDiv.innerText = this.convertToDuration(this.currentTime);
-    this.allTimeCountDiv.innerText = `Toplam Çalışma Süreniz: ${this.convertToDuration(this.currentTime + Data.totalTime)}`;
+    this.allTimeCountDiv.innerText = `Your Total Working Time: ${this.convertToDuration(this.currentTime + Data.totalTime)}`;
   },
 
   //Adds a new row to the timer list

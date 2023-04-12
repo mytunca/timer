@@ -1,16 +1,16 @@
 body {
-  font-size: x-large;
+  font-size: 2vw;
 }
 
 button {
-  font-size:medium;
-  padding: 0.2rem 5rem;
+  font-size:2vw;
+  padding: 0.2rem 1rem;
   margin: 0.2rem;
 }
 
 table tr, td, th {
   border: 1px solid black;
-  padding: 0.2rem 2rem;
+  padding: .2rem .2rem;
 }
 
 thead {
@@ -34,14 +34,15 @@ thead {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 10px;
 }
 
 .current-timer {
-  font-size: 5rem;
+  font-size: 10vw;
   color: blue;
 }
 
 .note {
-  font-size: 1rem;
+  font-size: 2vw;
   color: gray
 }
