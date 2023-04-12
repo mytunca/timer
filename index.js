@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  new Button("Başla / Bitir", () => Timer.toggle());
-  new Button("Temizle", () => {Data.rows = []; Timer.stop();});
+  new Button("Start / Stop", () => Timer.toggle());
+  new Button("Clear", () => {Data.rows = []; Timer.stop();});
 
   Timer.create();
   Table.create();
@@ -44,7 +44,7 @@ const Table = {
     const table = document.createElement('table');
     this.htmlEl = table;
     const thead = document.createElement('thead');
-    thead.innerHTML = "<tr><th>Başlangıç</th><th>Bitiş</th><th>Süre</th></tr>";
+    thead.innerHTML = "<tr><th>Start Time</th><th>End Time</th><th>Duration</th></tr>";
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
@@ -107,7 +107,7 @@ const Timer = {
 
     const noteSpan = document.createElement('span');
     noteSpan.className = "note";
-    noteSpan.innerText = "Sayacı başlattıktan sonra tarayıcıyı kapatsanız dahi çalışmaya devam eder.";
+    noteSpan.innerText = "After starting the timer, it continues to run even if you close the browser.";
     root.appendChild(noteSpan);
 
     this.currentTime = 0;
