@@ -1,85 +1,93 @@
 document.addEventListener("DOMContentLoaded", () => {
-  new Button("Start / Stop", () => Timer.toggle());
-  new Button("Clear", () => { Data.rows = []; Timer.stop(); });
+  const lsData = new LSData("list");
+  const table = new Table("historyTable", lsData);
+  const timer = new Timer(lsData);
 
-  Timer.create();
-  Table.create();
+  lsData.table = table;
+  lsData.timer = timer;
 
+  const buttonsDiv = document.querySelector("#buttons");
+  new Button("Start / Stop", () => timer.toggle(), buttonsDiv);
+  new Button("Clear", () => { lsData.data = []; timer.stop(); }, buttonsDiv);
 })
 
-const Data = {
-  get rows() {
-    return JSON.parse(localStorage.getItem("list")) || [];
-  },
+class LSData {
+  constructor(lsItemName) {
+    this.lsItemName = lsItemName;
+  }
 
-  set rows(value) {
-    localStorage.setItem("list", JSON.stringify(value));
-    Table.render();
-  },
+  get data() {
+    return JSON.parse(localStorage.getItem(this.lsItemName)) || [];
+  }
 
-  addRow(value) {
-    const rows = this.rows;
-    rows.push(value);
-    this.rows = rows;
-  },
+  set data(newData) {
+    localStorage.setItem(this.lsItemName, JSON.stringify(newData));
+    if (this.table) this.table.render();
+    if (this.timer) this.timer.render()
+  }
 
-  get lastRow() {
-    const rows = this.rows;
-    return rows[rows.length - 1];
-  },
+  addItem(value) {
+    this.data = [...this.data, value];
+  }
 
-  set lastRow(value) {
-    const rows = this.rows;
-    rows[rows.length - 1] = value;
-    this.rows = rows;
-  },
+  deleteItem(index) {
+    this.data = this.data.filter((_, i) => i != index);
+  }
 
   get totalTime() {
-    return this.rows.reduce((sum, row) => sum + (row.End && (row.End - row.Start) || 0), 0);
+    return this.data.reduce((sum, row) => sum + (row.End && (row.End - row.Start) || 0), 0);
+  }
+
+  get lastRow() {
+    const rows = this.data;
+    return rows[rows.length - 1];
+  }
+
+  set lastRow(value) {
+    const rows = this.data;
+    rows[rows.length - 1] = value;
+    this.data = rows;
   }
 }
 
-const Table = {
-  create() {
-    const table = document.createElement('table');
-    this.htmlEl = table;
-    const thead = document.createElement('thead');
-    thead.innerHTML = "<tr><th>Start Time</th><th>End Time</th><th>Duration</th></tr>";
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
-    table.appendChild(tbody);
-    this.tbody = tbody;
-
-    document.querySelector("#root").appendChild(table);
+class Table {
+  /**
+   * @param {string} tableId 
+   * @param {LSData} lsData 
+   */
+  constructor(tableId, lsData) {
+    this.htmlEl = document.getElementById(tableId);
+    this.tbody = this.htmlEl.querySelector("tbody");
+    this.lsData = lsData;
     this.render();
-  },
+  }
 
   render() {
     this.tbody.innerHTML = "";
-    const data = Data.rows.reverse();
-    data.forEach(row => this.addRow(row));
+    this.lsData.data.forEach((row, i) => {
+      const start = new Date(Number(row.Start)).toLocaleString('tr-TR');
+      const end = row.End ? new Date(Number(row.End)).toLocaleString('tr-TR') : "";
+      const duration = row.End ? Timer.convertToDuration(row.End - row.Start) : "";
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${start}</td><td>${end}</td><td>${duration}</td><td></td>`;
+
+      if (end) new Button("✖", () => this.lsData.deleteItem(i), tr.lastElementChild);
+      else tr.className = "active";
+
+      this.tbody.insertBefore(tr, this.tbody.firstChild);
+    });
 
     this.htmlEl.style.display = "none";
-    if (data.length > 0) this.htmlEl.style.display = "table";
-  },
-
-  addRow(row) {
-    const start = new Date(Number(row.Start)).toLocaleString('tr-TR');
-    const end = row.End ? new Date(Number(row.End)).toLocaleString('tr-TR') : "";
-    const duration = row.End ? Timer.convertToDuration(row.End - row.Start) : "";
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${start}</td><td>${end}</td><td>${duration}</td>`;
-    if (!end) tr.className = "active";
-    this.tbody.append(tr);
+    if (this.lsData.data.length > 0) this.htmlEl.style.display = null;
   }
 }
 
 class Button {
-  constructor(innerText, handleClick) {
+  constructor(innerText, handleClick, elToAppend) {
     this.innerText = innerText;
     this.handleClick = handleClick;
+    this.elToAppend = elToAppend;
     this.create();
 
   }
@@ -87,76 +95,83 @@ class Button {
     const button = document.createElement('button');
     button.innerText = this.innerText;
     button.onclick = this.handleClick;
-    document.querySelector("#buttons").appendChild(button);
+    this.elToAppend.appendChild(button);
     this.el = button;
   }
 }
 
-const Timer = {
-  create() {
-    const root = document.querySelector("#root");
+class Timer {
+  /**
+  * @param {LSData} lsData
+  */
+  constructor(lsData) {
+    this.lsData = lsData;
+
+    const timerDiv = document.querySelector("#timer");
     const currentTimerDiv = document.createElement('div');
-    currentTimerDiv.className = "current-timer"
-    root.appendChild(currentTimerDiv);
+    currentTimerDiv.className = "current-timer";
+    timerDiv.appendChild(currentTimerDiv);
     this.currentTimerDiv = currentTimerDiv;
 
     const allTimeCountDiv = document.createElement('div');
-    root.appendChild(allTimeCountDiv);
+    timerDiv.appendChild(allTimeCountDiv);
     this.allTimeCountDiv = allTimeCountDiv;
 
     const noteSpan = document.createElement('span');
     noteSpan.className = "note";
     noteSpan.innerText = "After starting the timer, it continues to run even if you close the browser.";
-    root.appendChild(noteSpan);
+    timerDiv.appendChild(noteSpan);
 
-    this.currentTime = 0;
-    this.render()
     if (this.isRunning) {
-      this.starting = Data.lastRow.Start;
+      this.starting = this.lsData.lastRow.Start;
       this.start();
     }
-  },
+
+    this.render();
+
+  }
 
   render() {
-    this.currentTimerDiv.innerText = this.convertToDuration(this.currentTime);
-    this.allTimeCountDiv.innerText = `Your Total Working Time: ${this.convertToDuration(this.currentTime + Data.totalTime)}`;
-  },
+    this.currentTimerDiv.innerText = Timer.convertToDuration(this.currentTime);
+    this.allTimeCountDiv.innerText = `Your Total Working Time: ${Timer.convertToDuration(this.currentTime + this.lsData.totalTime)}`;
+  }
 
   //Adds a new row to the timer list
   start() {
     if (!this.isRunning) {
       const now = new Date().getTime();
-      Data.addRow({ Start: now });
+      this.lsData.addItem({ Start: now });
       this.starting = now;
     }
 
     this.intervalId = setInterval(() => {
-      this.currentTime = new Date() - this.starting;
       this.render();
-    }, 75);
-  },
+    }, 250);
+  }
 
   //stops the current timer
   stop() {
-    const now = new Date().getTime();
-    Data.lastRow = { ...Data.lastRow, End: now };
+    this.lsData.lastRow = { ...this.lsData.lastRow, End: new Date().getTime() };
     clearInterval(this.intervalId);
-    this.currentTime = 0;
+    this.starting = null;
     this.render();
-  },
+  }
 
   get isRunning() {
-    const lastRow = Data.lastRow;
+    const lastRow = this.lsData.lastRow;
     return lastRow && !lastRow.End || false;
-  },
+  }
+
+  get currentTime() {
+    return this.starting ? new Date().getTime() - this.starting : 0;
+  }
 
   toggle() {
     if (this.isRunning) this.stop();
     else this.start();
-  },
+  }
 
-  convertToDuration(ms) {
-    return new Date(ms).toISOString().slice(11, 23);
+  static convertToDuration(ms) {
+    return new Date(ms).toISOString().slice(11, 19);
   }
 }
-

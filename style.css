@@ -8,6 +8,10 @@ button {
   margin: 0.2rem;
 }
 
+table {
+  border-collapse: collapse;
+}
+
 table tr, td, th {
   border: 1px solid black;
   padding: .2rem .2rem;
@@ -43,6 +47,6 @@ thead {
 }
 
 .note {
-  font-size: 2vw;
+  font-size: 1vw;
   color: gray
 }
